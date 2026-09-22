@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "molternring",
+	"version": "${version}",
+	"name": "Moltern Ring",
+	"description": "Moltern Ring mod for Minecraft 26.3",
+	"authors": [
+		"joke"
+	],
+	"contact": {
+		"sources": ""
+	},
+	"license": "MIT",
+	"icon": "assets/molternring/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.joke.molternring.MolternRing"
+		],
+		"client": [
+			"com.joke.molternring.client.MolternRingClient"
+		]
+	},
+	"mixins": [
+		"molternring.mixins.json",
+		{
+			"config": "molternring.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
+

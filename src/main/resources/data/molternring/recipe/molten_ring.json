@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "B": "minecraft:blaze_powder",
+    "G": "minecraft:gold_ingot",
+    "M": "minecraft:magma_cream",
+    "Q": "minecraft:quartz"
+  },
+  "pattern": [
+    "MBM",
+    "QGQ",
+    "MBM"
+  ],
+  "result": {
+    "count": 1,
+    "id": "molternring:molten_ring"
+  }
+}
+
