@@ -1,9 +1,9 @@
 {
 	"required": true,
-	"package": "com.joke.molternring.client.mixin",
+	"package": "com.joke.moltenring.client.mixin",
 	"compatibilityLevel": "JAVA_25",
 	"client": [
-		"MolternRingClientMixin"
+		"MoltenRingClientMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
