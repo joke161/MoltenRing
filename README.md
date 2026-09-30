@@ -1,6 +1,6 @@
 # MoltenRing
 
-A lightweight, production-grade **Minecraft 26.3** mod built on the **Fabric Loader**, introducing the legendary **Molten Ring** (`moltenring:molten_ring`) with passive emergency fire protection, dynamic wear progression, and an active lava-walking ability.
+A lightweight, production-grade **Minecraft 1.21.1** magic mod built on the **Fabric Loader** with first-class **Trinkets** integration, introducing the legendary **Molten Ring** (`moltenring:molten_ring`) with passive emergency fire protection, dynamic wear progression, and an active lava-walking ability.
 
 ---
 
@@ -8,21 +8,30 @@ A lightweight, production-grade **Minecraft 26.3** mod built on the **Fabric Loa
 
 ### 1. Item: Molten Ring (`moltenring:molten_ring`)
 - **Stack Size**: Non-stackable (max 1 per slot).
+- **Trinkets Integration**: Equippable directly into the **Trinkets Ring Slot** (`hand:ring` / `ring`).
 - **Creative Tabs**: Dedicated `Molten Ring` tab (`itemGroup.moltenring`), integrated into vanilla `Tools & Utilities` and `Combat` tabs.
 - **Acquisition & Crafting**:
-  - **Crafting Table**: 4 Netherite Ingots, 4 Blaze Rods, and 1 Lava Bucket (returns an empty bucket upon crafting).
+  - **Crafting Table**: 4 Magma Cream, 2 Quartz, 2 Blaze Powder, 1 Gold Ingot.
   - **Dungeon Generation**: 15% chance to spawn inside Nether Fortress bridge chests (`chests/nether_bridge`).
 - **Dynamic Model & Wear Progression (7 Stages)**:
   - **100% Energy**: Pristine gold ring with no cracks (`ring.png`).
   - **Stages 1–5**: Micro-cracks appear dynamically, glowing dark crimson with spark particles as energy depletes.
   - **Stage 6 (Broken)**: Heavily fractured mesh with missing fragments at 0% energy or during penalty cooldown.
 - **Custom Energy Bar**: Colored durability meter transitioning from green to yellow, and red during penalty lockouts.
-- **First-Person Immersion**: Utilizes `ignoreSwapAnimation()` to eliminate hand-re-equip bobbing when energy states mutate.
+- **First-Person Immersion**: Custom `ItemInHandRenderer` mixin prevents hand-re-equip bobbing when energy states mutate in real time.
 
 ---
 
-### 2. Passive Ability (Emergency Lava & Fire Shield)
-- **Trigger**: Activates automatically when entering lava, fire, or catching fire while held in the off-hand.
+### 2. Trinkets Accessory Support
+- **Equip Slot**: Seamlessly slots into the Trinkets accessory menu (`Ring` slot).
+- **Hands-Free Magic**: All abilities (both passive emergency protection and active Lava Walker) function continuously while worn in a Trinkets slot, freeing up both main hand and off-hand for weapons, tools, or magical catalysts.
+- **Full Keybind Support**: The toggle keybind (`R`) automatically detects worn Trinket rings first before falling back to player inventory.
+- **Unified Cooldowns**: Cooldowns and anti-exploit locks synchronize between Trinket slots and the player's inventory.
+
+---
+
+### 3. Passive Ability (Emergency Lava & Fire Shield)
+- **Trigger**: Activates automatically when entering lava, fire, or catching fire while equipped in a Trinkets slot, held in hands, or carried in inventory.
 - **Grace Window (5 Seconds)**: Grants immediate *Fire Resistance* for 5 seconds to navigate out of hazard zones.
 - **Rapid Safe Extinguishing**:
   - Upon exiting lava/fire, remaining burn time drops to ~2.5 seconds (down from vanilla's 15 seconds).
@@ -34,7 +43,7 @@ A lightweight, production-grade **Minecraft 26.3** mod built on the **Fabric Loa
 
 ---
 
-### 3. Active Ability (Lava Walker)
+### 4. Active Ability (Lava Walker)
 - **Controls**:
   - **Right-Click** with the ring in hand.
   - **Keybind** (`R` by default, configurable in controls: `key.moltenring.toggle`).
@@ -50,26 +59,26 @@ A lightweight, production-grade **Minecraft 26.3** mod built on the **Fabric Loa
 
 ---
 
-### 4. Anti-Exploit System & Cooldown Synchronization
+### 5. Anti-Exploit System & Cooldown Synchronization
 - **Proportional Cooldown Enforcement**:
   - Toggling Lava Walker off (via Right-Click or keybind `R`) applies an engine-level cooldown equal to the exact recharge time of consumed energy:
     $$\text{cooldownTicks} = \max(100, (1200 - \text{energy}) \times 3)$$
   - Features a minimum threshold of **5 seconds** (100 ticks) to protect against accidental misclicks and button spamming.
-  - **Anti-Cycle Exploit**: Cooldown applies inventory-wide to the item class via vanilla `ItemCooldowns`. Swapping between multiple rings provides zero advantage, as all rings in inventory remain locked until the active ring cools down.
-- **Active State Mutual Exclusion**: Pressing Right-Click while Lava Walker is already active safely deactivates the mode (`toggle off`) instead of stacking durations across multiple rings.
+  - **Anti-Cycle Exploit**: Cooldown applies across all rings (both in inventory and Trinket slots) via vanilla `ItemCooldowns`. Swapping between multiple rings provides zero advantage.
+- **Active State Mutual Exclusion**: Pressing Right-Click or `R` while Lava Walker is already active safely deactivates the mode (`toggle off`) instead of stacking durations across multiple rings.
 - **Overheat Safety Lock**: While cooldown is active (`isOnCooldown == true`), passive emergency triggers are completely disabled.
 - **Relog & Respawn Persistence**: Cooldown and wear states serialize to persistent components, restoring active cooldown timers upon re-entering worlds.
 
 ---
 
-### 5. Block: Temporary Magma (`moltenring:temporary_magma`)
+### 6. Block: Temporary Magma (`moltenring:temporary_magma`)
 - Stepping on temporary magma deals no damage to the player.
 - Features 4 age states (`age: 0..3`) before reverting to lava.
 - Maintained persistently by nearby active ring holders.
 
 ---
 
-### 6. Localization & UI
+### 7. Localization & UI
 - Fully localized in **English** (`en_us.json`) and **Russian** (`ru_ru.json`).
 - Dynamic tooltips displaying charge percentage and current state (*Active*, *Ready*, *Shielding*, *Cooling Down*, *Recharging*, *Broken*).
 - Audio feedback paired with Actionbar status updates.
@@ -84,10 +93,11 @@ A lightweight, production-grade **Minecraft 26.3** mod built on the **Fabric Loa
 
 ## 🛠 Technical Specifications & Building
 
-* **Minecraft Version**: 26.3
-* **Fabric Loader**: >= 0.19.5
-* **Fabric API**: >= 0.161.0+26.3
-* **Java Version**: 25+ (OpenJDK 26)
+* **Minecraft Version**: 1.21.1
+* **Fabric Loader**: >= 0.16.0
+* **Fabric API**: >= 0.116.17+1.21.1
+* **Trinkets**: >= 3.10.0
+* **Java Version**: 21+
 * **Mappings**: Official Mojang Mappings
 
 ### Build Commands
@@ -97,3 +107,4 @@ A lightweight, production-grade **Minecraft 26.3** mod built on the **Fabric Loa
 
 # Launch dev client for testing
 ./gradlew runClient
+```

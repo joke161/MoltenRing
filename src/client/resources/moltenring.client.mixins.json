@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "com.joke.moltenring.client.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"ItemInHandRendererMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

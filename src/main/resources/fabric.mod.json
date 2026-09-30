@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "molternring",
+	"id": "moltenring",
 	"version": "${version}",
-	"name": "Moltern Ring",
-	"description": "Moltern Ring mod for Minecraft 26.3",
+	"name": "Molten Ring",
+	"description": "Molten Ring mod for Minecraft 1.21.1 with Trinkets support",
 	"authors": [
 		"joke"
 	],
@@ -11,28 +11,28 @@
 		"sources": ""
 	},
 	"license": "MIT",
-	"icon": "assets/molternring/icon.png",
+	"icon": "assets/moltenring/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.joke.molternring.MolternRing"
+			"com.joke.moltenring.MoltenRing"
 		],
 		"client": [
-			"com.joke.molternring.client.MolternRingClient"
+			"com.joke.moltenring.client.MoltenRingClient"
 		]
 	},
 	"mixins": [
-		"molternring.mixins.json",
+		"moltenring.mixins.json",
 		{
-			"config": "molternring.client.mixins.json",
+			"config": "moltenring.client.mixins.json",
 			"environment": "client"
 		}
 	],
 	"depends": {
-		"fabricloader": ">=0.19.5",
-		"minecraft": "~26.3",
-		"java": ">=25",
-		"fabric-api": "*"
+		"fabricloader": ">=0.16.0",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*",
+		"trinkets": ">=3.10.0"
 	}
 }
-
