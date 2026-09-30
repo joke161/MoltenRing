@@ -5,10 +5,9 @@
   },
   "overrides": [
     { "predicate": { "damage": 0.001 }, "model": "moltenring:item/molten_ring_1" },
-    { "predicate": { "damage": 0.2 },   "model": "moltenring:item/molten_ring_2" },
-    { "predicate": { "damage": 0.4 },   "model": "moltenring:item/molten_ring_3" },
-    { "predicate": { "damage": 0.6 },   "model": "moltenring:item/molten_ring_4" },
-    { "predicate": { "damage": 0.8 },   "model": "moltenring:item/molten_ring_5" },
-    { "predicate": { "damage": 0.98 },  "model": "moltenring:item/molten_ring_6" }
+    { "predicate": { "damage": 0.25 },  "model": "moltenring:item/molten_ring_2" },
+    { "predicate": { "damage": 0.5 },   "model": "moltenring:item/molten_ring_3" },
+    { "predicate": { "damage": 0.75 },  "model": "moltenring:item/molten_ring_4" },
+    { "predicate": { "damage": 1.0 },   "model": "moltenring:item/molten_ring_6" }
   ]
 }

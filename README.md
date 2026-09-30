@@ -13,10 +13,10 @@ A lightweight, production-grade **Minecraft 1.21.1** magic mod built on the **Fa
 - **Acquisition & Crafting**:
   - **Crafting Table**: 4 Magma Cream, 2 Quartz, 2 Blaze Powder, 1 Gold Ingot.
   - **Dungeon Generation**: 15% chance to spawn inside Nether Fortress bridge chests (`chests/nether_bridge`).
-- **Dynamic Model & Wear Progression (7 Stages)**:
-  - **100% Energy**: Pristine gold ring with no cracks (`ring.png`).
-  - **Stages 1–5**: Micro-cracks appear dynamically, glowing dark crimson with spark particles as energy depletes.
-  - **Stage 6 (Broken)**: Heavily fractured mesh with missing fragments at 0% energy or during penalty cooldown.
+- **Dynamic Model & Wear Progression (6 States)**:
+  - **100% Energy**: Pristine gold ring with no cracks (`molten_ring.png`).
+  - **Stages 1–4**: Micro-cooling transitions appear progressively (25%, 50%, 75% usage) as energy depletes, keeping the ring intact.
+  - **Stage 6 (Broken)**: Heavily fractured mesh with missing fragments (`molten_ring_6.png`), displaying exclusively upon complete depletion (0% energy) and throughout the 3-minute penalty cooldown.
 - **Custom Energy Bar**: Colored durability meter transitioning from green to yellow, and red during penalty lockouts.
 - **First-Person Immersion**: Custom `ItemInHandRenderer` mixin prevents hand-re-equip bobbing when energy states mutate in real time.
 

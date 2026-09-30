@@ -232,7 +232,7 @@ public class MoltenRingItem extends Item implements Trinket {
 			stack.set(ModDataComponents.RING_DATA, new RingData(active, energy, passiveCd, idleTicks, penaltyCd, passiveGraceTicks, exitedDanger));
 		}
 
-		int targetDamage = RingData.MAX_ENERGY - energy;
+		int targetDamage = (penaltyCd > 0 || energy <= 0) ? RingData.MAX_ENERGY : (RingData.MAX_ENERGY - energy);
 		if (stack.getDamageValue() != targetDamage) {
 			stack.setDamageValue(targetDamage);
 		}
