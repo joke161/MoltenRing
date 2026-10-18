@@ -1,6 +1,6 @@
 # MoltenRing
 
-A lightweight, production-grade **Minecraft 26.3** mod built on the **Fabric Loader**, introducing the legendary **Molten Ring** (`moltenring:molten_ring`) with passive emergency fire protection, dynamic wear progression, and an active lava-walking ability.
+A lightweight, production-grade **Minecraft 26.3** mod built on the **Fabric Loader**, introducing the legendary **Molten Ring** with passive emergency fire protection, dynamic wear progression, and an active lava-walking ability.
 
 ---
 
