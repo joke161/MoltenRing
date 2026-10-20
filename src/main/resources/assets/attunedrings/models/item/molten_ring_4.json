@@ -1,5 +1,5 @@
 {
-  "parent": "minecraft:item/generated",
+  "parent": "attunedrings:item/ring_base",
   "textures": {
     "layer0": "attunedrings:item/molten_ring_4"
   }
