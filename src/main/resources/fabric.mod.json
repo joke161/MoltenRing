@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "moltenring",
+	"id": "attunedrings",
 	"version": "${version}",
-	"name": "Molten Ring",
-	"description": "Molten Ring mod for Minecraft 1.21.1 with Trinkets support",
+	"name": "Attuned Rings",
+	"description": "Attuned Rings mod for Minecraft 1.21.1 with Trinkets support",
 	"authors": [
 		"joke"
 	],
@@ -11,20 +11,20 @@
 		"sources": ""
 	},
 	"license": "MIT",
-	"icon": "assets/moltenring/icon.png",
+	"icon": "assets/attunedrings/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"com.joke.moltenring.MoltenRing"
+			"com.joke.attunedrings.AttunedRings"
 		],
 		"client": [
-			"com.joke.moltenring.client.MoltenRingClient"
+			"com.joke.attunedrings.client.AttunedRingsClient"
 		]
 	},
 	"mixins": [
-		"moltenring.mixins.json",
+		"attunedrings.mixins.json",
 		{
-			"config": "moltenring.client.mixins.json",
+			"config": "attunedrings.client.mixins.json",
 			"environment": "client"
 		}
 	],

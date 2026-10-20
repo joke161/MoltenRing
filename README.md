@@ -1,15 +1,15 @@
-# MoltenRing
+# Attuned Rings
 
-A lightweight, production-grade **Minecraft 1.21.1** magic mod built on the **Fabric Loader** with first-class **Trinkets** integration, introducing the legendary **Molten Ring** (`moltenring:molten_ring`) with passive emergency fire protection, dynamic wear progression, and an active lava-walking ability.
+A modular **Minecraft 1.21.1** magic mod built on the **Fabric Loader** with first-class **Trinkets** integration, introducing elemental attuned rings starting with the legendary **Molten Ring** (`attunedrings:molten_ring`) featuring passive emergency fire protection, dynamic wear progression, and an active lava-walking ability.
 
 ---
 
 ## 📋 Features
 
-### 1. Item: Molten Ring (`moltenring:molten_ring`)
+### 1. Item: Molten Ring (`attunedrings:molten_ring`)
 - **Stack Size**: Non-stackable (max 1 per slot).
 - **Trinkets Integration**: Equippable directly into the **Trinkets Ring Slot** (`hand:ring` / `ring`).
-- **Creative Tabs**: Dedicated `Molten Ring` tab (`itemGroup.moltenring`), integrated into vanilla `Tools & Utilities` and `Combat` tabs.
+- **Creative Tabs**: Dedicated `Attuned Rings` tab (`itemGroup.attunedrings`), integrated into vanilla `Tools & Utilities` and `Combat` tabs.
 - **Acquisition & Crafting**:
   - **Crafting Table**: 4 Magma Cream, 2 Quartz, 2 Blaze Powder, 1 Gold Ingot.
   - **Dungeon Generation**: 15% chance to spawn inside Nether Fortress bridge chests (`chests/nether_bridge`).
@@ -46,9 +46,9 @@ A lightweight, production-grade **Minecraft 1.21.1** magic mod built on the **Fa
 ### 4. Active Ability (Lava Walker)
 - **Controls**:
   - **Right-Click** with the ring in hand.
-  - **Keybind** (`R` by default, configurable in controls: `key.moltenring.toggle`).
+  - **Keybind** (`R` by default, configurable in controls: `key.attunedrings.toggle`).
 - **Energy Pool**: 60 seconds of continuous operation (1200 ticks).
-- **Lava Solidification**: Converts lava source blocks within a 3-block radius into **Temporary Magma** (`moltenring:temporary_magma`).
+- **Lava Solidification**: Converts lava source blocks within a 3-block radius into **Temporary Magma** (`attunedrings:temporary_magma`).
 - **Player-Centric Platform Stabilization**: While standing on the generated platform, magma directly underneath and surrounding the player does not melt, crack, or regenerate.
 - **Trail Melting**: Blocks outside the stabilization perimeter melt back into lava after 3–5 seconds.
 - **Proportional Energy Regeneration**:
@@ -71,7 +71,7 @@ A lightweight, production-grade **Minecraft 1.21.1** magic mod built on the **Fa
 
 ---
 
-### 6. Block: Temporary Magma (`moltenring:temporary_magma`)
+### 6. Block: Temporary Magma (`attunedrings:temporary_magma`)
 - Stepping on temporary magma deals no damage to the player.
 - Features 4 age states (`age: 0..3`) before reverting to lava.
 - Maintained persistently by nearby active ring holders.

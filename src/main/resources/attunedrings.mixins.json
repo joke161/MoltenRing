@@ -1,0 +1,14 @@
+{
+	"required": true,
+	"package": "com.joke.attunedrings.mixin",
+	"compatibilityLevel": "JAVA_21",
+	"mixins": [
+		"AttunedRingsMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}
