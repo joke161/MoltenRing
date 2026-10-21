@@ -124,7 +124,7 @@ public class SpellHudRenderer {
 			guiGraphics.renderOutline(x, y, panelWidth, panelHeight, borderColor);
 		}
 
-		// 3. Ring Frame & Icon on left side
+		// 3. Ring Frame & Icon on left side (rendered cleanly without cooldown overlay or durability bar)
 		int ringBoxX = x + 5;
 		int ringBoxY = y + 5;
 		int ringBoxSize = 26;
@@ -132,7 +132,6 @@ public class SpellHudRenderer {
 		guiGraphics.renderOutline(ringBoxX, ringBoxY, ringBoxSize, ringBoxSize, isOverheating ? borderColor : 0xFF3A3A48);
 
 		guiGraphics.renderItem(ringStack, ringBoxX + 5, ringBoxY + 5);
-		guiGraphics.renderItemDecorations(client.font, ringStack, ringBoxX + 5, ringBoxY + 5);
 
 		Font font = client.font;
 		int textX = x + 36;

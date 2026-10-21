@@ -327,8 +327,7 @@ public class MoltenRingItem extends TrinketItem {
 
 	@Override
 	public boolean isBarVisible(ItemStack stack) {
-		RingData data = stack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
-		return data.penaltyCooldown() > 0 || data.energy() < RingData.MAX_ENERGY;
+		return false;
 	}
 
 	@Override
