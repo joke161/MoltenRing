@@ -5,8 +5,10 @@ import com.joke.attunedrings.magic.ElementType;
 import com.joke.attunedrings.magic.SpellType;
 import com.joke.attunedrings.registry.ModDataComponents;
 import com.joke.attunedrings.registry.ModItems;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
@@ -15,12 +17,34 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 public class SpellHudRenderer {
 
 	public static void init() {
 		HudRenderCallback.EVENT.register(SpellHudRenderer::renderHud);
+	}
+
+	public static String getLatinKeyName(KeyMapping keyMapping) {
+		try {
+			var key = KeyBindingHelper.getBoundKeyOf(keyMapping);
+			if (key != null) {
+				String name = key.getName();
+				if (name != null && !name.isEmpty()) {
+					if (name.startsWith("key.keyboard.")) {
+						name = name.substring("key.keyboard.".length());
+					} else if (name.startsWith("key.mouse.")) {
+						name = "M" + name.substring("key.mouse.".length());
+					} else if (name.startsWith("key.")) {
+						name = name.substring("key.".length());
+					}
+					return name.toUpperCase(Locale.ROOT);
+				}
+			}
+		} catch (Exception ignored) {
+		}
+		return keyMapping.getTranslatedKeyMessage().getString().toUpperCase(Locale.ROOT);
 	}
 
 	private static void renderHud(GuiGraphics guiGraphics, DeltaTracker deltaTracker) {
@@ -74,13 +98,13 @@ public class SpellHudRenderer {
 		List<ElementType> queue = ClientSpellQueue.getQueue();
 		RingData ringData = isUnattuned ? null : ringStack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
 
-		int screenWidth = guiGraphics.guiWidth();
 		int screenHeight = guiGraphics.guiHeight();
 
-		int panelWidth = 176;
-		int panelHeight = 36;
-		int x = (screenWidth - panelWidth) / 2;
-		int y = screenHeight - 74; // Positioned comfortably above health & hotbar
+		// Unified compact panel positioned in the bottom-left corner
+		int panelWidth = 174;
+		int panelHeight = 44;
+		int x = 6;
+		int y = screenHeight - panelHeight - 6;
 
 		boolean isOverheating = queue.size() >= 4;
 
@@ -101,35 +125,47 @@ public class SpellHudRenderer {
 		}
 
 		// 3. Ring Frame & Icon on left side
-		int ringBoxX = x + 4;
-		int ringBoxY = y + 4;
-		int ringBoxSize = 28;
+		int ringBoxX = x + 5;
+		int ringBoxY = y + 5;
+		int ringBoxSize = 26;
 		guiGraphics.fill(ringBoxX, ringBoxY, ringBoxX + ringBoxSize, ringBoxY + ringBoxSize, 0x801A1A22);
 		guiGraphics.renderOutline(ringBoxX, ringBoxY, ringBoxSize, ringBoxSize, isOverheating ? borderColor : 0xFF3A3A48);
 
-		guiGraphics.renderItem(ringStack, ringBoxX + 6, ringBoxY + 6);
-		guiGraphics.renderItemDecorations(client.font, ringStack, ringBoxX + 6, ringBoxY + 6);
+		guiGraphics.renderItem(ringStack, ringBoxX + 5, ringBoxY + 5);
+		guiGraphics.renderItemDecorations(client.font, ringStack, ringBoxX + 5, ringBoxY + 5);
 
 		Font font = client.font;
-		int textX = x + 38;
-		int textY = y + 5;
+		int textX = x + 36;
+		int textY = y + 4;
 
-		String key1 = ModKeyMappings.KEY_RING_1.getTranslatedKeyMessage().getString();
-		String keyCast = ModKeyMappings.KEY_CAST.getTranslatedKeyMessage().getString();
+		String key1 = getLatinKeyName(ModKeyMappings.KEY_RING_1);
+		String keyCast = getLatinKeyName(ModKeyMappings.KEY_CAST);
 
 		if (isUnattuned) {
 			int heat = ringStack.getOrDefault(ModDataComponents.HEAT_PROGRESS, 0);
 			int pct = Math.min(100, (int) Math.round(((double) heat / 200.0) * 100.0));
 			if (heat > 0) {
 				guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_heating", pct).getString(), textX, textY, 0xFFFFFFFF, true);
+				// Progress bar across Row 2
+				int barX = textX;
+				int barY = y + 16;
+				int barW = 132;
+				int barH = 11;
+				guiGraphics.fill(barX, barY, barX + barW, barY + barH, 0x50000000);
+				guiGraphics.renderOutline(barX, barY, barW, barH, 0xFF553311);
+				int fillW = Math.max(1, Math.round((float) (barW - 2) * ((float) heat / 200.0f)));
+				guiGraphics.fill(barX + 1, barY + 1, barX + 1 + fillW, barY + barH - 1, 0xFFFF7700);
 			} else {
 				guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_unattuned").getString(), textX, textY, 0xFFCCCCCC, true);
 			}
-			guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_heating_hint").getString(), textX, y + 19, 0xFFAAAAAA, true);
+			// Heating hint inside frame at Row 3
+			String hint = Component.translatable("gui.attunedrings.hud_heating_hint").getString();
+			int hintW = font.width(hint);
+			guiGraphics.drawString(font, hint, x + (panelWidth - hintW) / 2, y + 31, 0xFFAAAAAA, true);
 			return;
 		}
 
-		// 4. Spell Title / Info above rune sockets
+		// 4. Spell Title / Info above rune sockets (Row 1)
 		boolean hasQueue = !queue.isEmpty();
 		if (hasQueue) {
 			Optional<SpellType> spellOpt = SpellType.fromQueue(queue);
@@ -156,14 +192,15 @@ public class SpellHudRenderer {
 			}
 		}
 
-		// 5. 5 Rune Sockets
-		int slotStartX = x + 38;
-		int slotY = y + 18;
-		int slotWidth = 24;
-		int slotHeight = 13;
+		// 5. 5 Rune Sockets (Row 2)
+		int slotStartX = x + 36;
+		int slotY = y + 16;
+		int slotWidth = 23;
+		int slotHeight = 12;
+		int slotSpacing = 3;
 
 		for (int i = 0; i < 5; i++) {
-			int slotX = slotStartX + (i * (slotWidth + 3));
+			int slotX = slotStartX + (i * (slotWidth + slotSpacing));
 			boolean filled = i < queue.size();
 
 			if (filled) {
@@ -176,7 +213,7 @@ public class SpellHudRenderer {
 				// Centered fire symbol
 				String sym = elem.getSymbol();
 				int symW = font.width(sym);
-				guiGraphics.drawString(font, sym, slotX + (slotWidth - symW) / 2, slotY + 3, 0xFFFFFFFF, true);
+				guiGraphics.drawString(font, sym, slotX + (slotWidth - symW) / 2, slotY + 2, 0xFFFFFFFF, true);
 			} else {
 				// Dim empty socket
 				guiGraphics.fill(slotX, slotY, slotX + slotWidth, slotY + slotHeight, 0x40000000);
@@ -184,12 +221,10 @@ public class SpellHudRenderer {
 			}
 		}
 
-		// 6. Key Hint Bar directly below the panel
+		// 6. Key Hint inside the frame at the bottom (Row 3)
 		String hintText = Component.translatable("gui.attunedrings.hud_hint", key1, keyCast, keyCast).getString();
 		int hintW = font.width(hintText);
-		int hintX = x + (panelWidth - hintW) / 2;
-		int hintY = y + panelHeight + 3;
-		guiGraphics.fill(hintX - 3, hintY - 1, hintX + hintW + 3, hintY + 9, 0x90000000);
-		guiGraphics.drawString(font, hintText, hintX, hintY, 0xFFE0E0E0, true);
+		int hintX = Math.max(x + 4, x + (panelWidth - hintW) / 2);
+		guiGraphics.drawString(font, hintText, hintX, y + 31, 0xFFE0E0E0, true);
 	}
 }
