@@ -4,12 +4,13 @@ import com.joke.attunedrings.component.RingData;
 import com.joke.attunedrings.registry.ModDataComponents;
 import com.joke.attunedrings.registry.ModItems;
 import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.Trinket;
 import dev.emi.trinkets.api.TrinketItem;
 import dev.emi.trinkets.api.TrinketsApi;
+import net.minecraft.core.Holder;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
@@ -18,18 +19,32 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
 import java.util.List;
 
-public class UnattunedRingItem extends Item implements Trinket {
+public class UnattunedRingItem extends TrinketItem {
 	public static final int TARGET_HEAT = 200; // 10s in fire (200 ticks) or 5s in lava (100 ticks * 2)
 
 	public UnattunedRingItem(Properties properties) {
 		super(properties);
+	}
+
+	@Override
+	public boolean canEquip(ItemStack stack, SlotReference slot, LivingEntity entity) {
+		return slot.inventory().getSlotType().getName().contains("ring");
+	}
+
+	@Override
+	public boolean canEquipFromUse(ItemStack stack, LivingEntity entity) {
+		return true;
+	}
+
+	@Override
+	public Holder<SoundEvent> getEquipSound(ItemStack stack, SlotReference slot, LivingEntity entity) {
+		return SoundEvents.ARMOR_EQUIP_GOLD;
 	}
 
 	@Override
