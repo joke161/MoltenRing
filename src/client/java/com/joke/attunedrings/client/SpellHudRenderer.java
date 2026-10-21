@@ -156,7 +156,8 @@ public class SpellHudRenderer {
 				int fillW = Math.max(1, Math.round((float) (barW - 2) * ((float) heat / 200.0f)));
 				guiGraphics.fill(barX + 1, barY + 1, barX + 1 + fillW, barY + barH - 1, 0xFFFF7700);
 			} else {
-				guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_unattuned").getString(), textX, textY, 0xFFCCCCCC, true);
+				guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_unattuned").getString(), textX, textY, 0xFFFFFFFF, true);
+				guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_unattuned_guide").getString(), textX, y + 17, 0xFFCCCCCC, true);
 			}
 			// Heating hint inside frame at Row 3
 			String hint = Component.translatable("gui.attunedrings.hud_heating_hint").getString();

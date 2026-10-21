@@ -73,3 +73,13 @@ publishing {
 	repositories {
 	}
 }
+
+tasks.register('deployToPrism', Copy) {
+	def prismMods = file("/home/joke/.local/share/PrismLauncher/instances/1.21.1/minecraft/mods")
+	if (prismMods.exists()) {
+		from remapJar
+		into prismMods
+	}
+}
+assemble.finalizedBy deployToPrism
+
