@@ -34,6 +34,7 @@ public class AttunedRings implements ModInitializer {
 		ModItems.init();
 		ModCreativeTabs.init();
 		ModLootModifiers.init();
+		SpellHandler.init();
 
 		// Register networking payloads
 		PayloadTypeRegistry.playC2S().register(CastSpellPayload.TYPE, CastSpellPayload.STREAM_CODEC);

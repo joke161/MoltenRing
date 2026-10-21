@@ -14,6 +14,7 @@ public class AttunedRingsClient implements ClientModInitializer {
 		LOGGER.info("Initializing Attuned Rings Client");
 		ModKeyMappings.init();
 		SpellHudRenderer.init();
+		ClientHandEffect.init();
 
 		// Register client receiver for synced discovered spells
 		ClientPlayNetworking.registerGlobalReceiver(SyncDiscoveredSpellsPayload.TYPE, (payload, context) -> {

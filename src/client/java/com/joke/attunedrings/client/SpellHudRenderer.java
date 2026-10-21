@@ -32,33 +32,60 @@ public class SpellHudRenderer {
 		Player player = client.player;
 		ItemStack ringStack = ModKeyMappings.getEquippedRing(player, 0);
 		if (ringStack.isEmpty() || !ringStack.is(ModItems.MOLTEN_RING)) {
-			// Also check slot 2
-			ringStack = ModKeyMappings.getEquippedRing(player, 1);
+			ItemStack slot2 = ModKeyMappings.getEquippedRing(player, 1);
+			if (slot2.is(ModItems.MOLTEN_RING)) {
+				ringStack = slot2;
+			}
+		}
+
+		// Also check held items if not in Trinkets
+		if (ringStack.isEmpty() || !ringStack.is(ModItems.MOLTEN_RING)) {
+			if (player.getMainHandItem().is(ModItems.MOLTEN_RING)) {
+				ringStack = player.getMainHandItem();
+			} else if (player.getOffhandItem().is(ModItems.MOLTEN_RING)) {
+				ringStack = player.getOffhandItem();
+			}
+		}
+
+		// Check for unattuned ring if no molten ring found
+		boolean isUnattuned = false;
+		if (ringStack.isEmpty()) {
+			ItemStack u1 = ModKeyMappings.getEquippedRing(player, 0);
+			ItemStack u2 = ModKeyMappings.getEquippedRing(player, 1);
+			if (u1.is(ModItems.UNATTUNED_RING)) {
+				ringStack = u1;
+				isUnattuned = true;
+			} else if (u2.is(ModItems.UNATTUNED_RING)) {
+				ringStack = u2;
+				isUnattuned = true;
+			} else if (player.getMainHandItem().is(ModItems.UNATTUNED_RING)) {
+				ringStack = player.getMainHandItem();
+				isUnattuned = true;
+			} else if (player.getOffhandItem().is(ModItems.UNATTUNED_RING)) {
+				ringStack = player.getOffhandItem();
+				isUnattuned = true;
+			}
+		}
+
+		if (ringStack.isEmpty()) {
+			return; // Don't show HUD if player has neither ring
 		}
 
 		List<ElementType> queue = ClientSpellQueue.getQueue();
-		RingData ringData = ringStack.isEmpty() ? null : ringStack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
-
-		boolean isDamaged = ringData != null && (ringData.penaltyCooldown() > 0 || ringData.energy() < RingData.MAX_ENERGY);
-		boolean hasQueue = !queue.isEmpty();
-
-		// Consensus requirement: only visible when queue is NOT empty OR ring is damaged/regenerating
-		if (!hasQueue && !isDamaged) {
-			return;
-		}
+		RingData ringData = isUnattuned ? null : ringStack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
 
 		int screenWidth = guiGraphics.guiWidth();
 		int screenHeight = guiGraphics.guiHeight();
 
-		int panelWidth = 168;
+		int panelWidth = 176;
 		int panelHeight = 36;
 		int x = (screenWidth - panelWidth) / 2;
-		int y = screenHeight - 68; // Positioned comfortably above health/hotbar
+		int y = screenHeight - 74; // Positioned comfortably above health & hotbar
 
 		boolean isOverheating = queue.size() >= 4;
 
 		// 1. Panel Background
-		guiGraphics.fill(x, y, x + panelWidth, y + panelHeight, 0xB0111116);
+		guiGraphics.fill(x, y, x + panelWidth, y + panelHeight, 0xB8101016);
 
 		// 2. Border Outline (Pulsing fiery heat when 4-5 stacks)
 		int borderColor = 0xFF4A4A5A;
@@ -80,16 +107,30 @@ public class SpellHudRenderer {
 		guiGraphics.fill(ringBoxX, ringBoxY, ringBoxX + ringBoxSize, ringBoxY + ringBoxSize, 0x801A1A22);
 		guiGraphics.renderOutline(ringBoxX, ringBoxY, ringBoxSize, ringBoxSize, isOverheating ? borderColor : 0xFF3A3A48);
 
-		if (!ringStack.isEmpty()) {
-			guiGraphics.renderItem(ringStack, ringBoxX + 6, ringBoxY + 6);
-			guiGraphics.renderItemDecorations(client.font, ringStack, ringBoxX + 6, ringBoxY + 6);
-		}
+		guiGraphics.renderItem(ringStack, ringBoxX + 6, ringBoxY + 6);
+		guiGraphics.renderItemDecorations(client.font, ringStack, ringBoxX + 6, ringBoxY + 6);
 
-		// 4. Spell Title / Info above rune sockets
 		Font font = client.font;
 		int textX = x + 38;
 		int textY = y + 5;
 
+		String key1 = ModKeyMappings.KEY_RING_1.getTranslatedKeyMessage().getString();
+		String keyCast = ModKeyMappings.KEY_CAST.getTranslatedKeyMessage().getString();
+
+		if (isUnattuned) {
+			int heat = ringStack.getOrDefault(ModDataComponents.HEAT_PROGRESS, 0);
+			int pct = Math.min(100, (int) Math.round(((double) heat / 200.0) * 100.0));
+			if (heat > 0) {
+				guiGraphics.drawString(font, "§6Закалка: §e" + pct + "%", textX, textY, 0xFFFFFFFF, true);
+			} else {
+				guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_unattuned").getString(), textX, textY, 0xFFCCCCCC, true);
+			}
+			guiGraphics.drawString(font, "§8Огонь: 10с  §8|  §8Лава: 5с", textX, y + 19, 0xFFAAAAAA, true);
+			return;
+		}
+
+		// 4. Spell Title / Info above rune sockets
+		boolean hasQueue = !queue.isEmpty();
 		if (hasQueue) {
 			Optional<SpellType> spellOpt = SpellType.fromQueue(queue);
 			if (spellOpt.isPresent()) {
@@ -111,14 +152,15 @@ public class SpellHudRenderer {
 				int sec = (ringData.penaltyCooldown() + 19) / 20;
 				guiGraphics.drawString(font, "§c§lПЕРЕГРЕВ! §7Откат: " + sec + "с", textX, textY, 0xFFFF5555, true);
 			} else {
-				guiGraphics.drawString(font, "§6Магма: §e" + ringData.getEnergyPercent() + "%", textX, textY, 0xFFEEDD88, true);
+				String readyText = Component.translatable("gui.attunedrings.hud_ready").getString();
+				guiGraphics.drawString(font, "§6" + readyText + " §8| §e" + ringData.getEnergyPercent() + "%", textX, textY, 0xFFEEDD88, true);
 			}
 		}
 
 		// 5. 5 Rune Sockets
 		int slotStartX = x + 38;
 		int slotY = y + 18;
-		int slotWidth = 23;
+		int slotWidth = 24;
 		int slotHeight = 13;
 
 		for (int i = 0; i < 5; i++) {
@@ -142,5 +184,13 @@ public class SpellHudRenderer {
 				guiGraphics.renderOutline(slotX, slotY, slotWidth, slotHeight, 0xFF333340);
 			}
 		}
+
+		// 6. Key Hint Bar directly below the panel
+		String hintText = Component.translatable("gui.attunedrings.hud_hint", key1, keyCast, keyCast).getString();
+		int hintW = font.width(hintText);
+		int hintX = x + (panelWidth - hintW) / 2;
+		int hintY = y + panelHeight + 3;
+		guiGraphics.fill(hintX - 3, hintY - 1, hintX + hintW + 3, hintY + 9, 0x90000000);
+		guiGraphics.drawString(font, hintText, hintX, hintY, 0xFFE0E0E0, true);
 	}
 }

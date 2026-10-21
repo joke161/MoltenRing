@@ -7,6 +7,7 @@ import com.joke.attunedrings.registry.ModDataComponents;
 import com.joke.attunedrings.registry.ModItems;
 import dev.emi.trinkets.api.SlotReference;
 import dev.emi.trinkets.api.Trinket;
+import dev.emi.trinkets.api.TrinketItem;
 import dev.emi.trinkets.api.TrinketsApi;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -302,7 +303,11 @@ public class MoltenRingItem extends Item implements Trinket {
 
 	@Override
 	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-		return InteractionResultHolder.pass(player.getItemInHand(hand));
+		ItemStack stack = player.getItemInHand(hand);
+		if (TrinketItem.equipItem(player, stack)) {
+			return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+		}
+		return InteractionResultHolder.pass(stack);
 	}
 
 	@Override

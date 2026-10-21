@@ -23,6 +23,7 @@ public class ModCreativeTabs {
 			.title(Component.translatable("itemGroup.attunedrings"))
 			.icon(() -> new ItemStack(ModItems.MOLTEN_RING))
 			.displayItems((params, output) -> {
+				output.accept(ModItems.UNATTUNED_RING);
 				output.accept(ModItems.MOLTEN_RING);
 			})
 			.build()

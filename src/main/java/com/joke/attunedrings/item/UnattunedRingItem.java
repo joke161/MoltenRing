@@ -3,7 +3,10 @@ package com.joke.attunedrings.item;
 import com.joke.attunedrings.component.RingData;
 import com.joke.attunedrings.registry.ModDataComponents;
 import com.joke.attunedrings.registry.ModItems;
+import dev.emi.trinkets.api.SlotReference;
 import dev.emi.trinkets.api.Trinket;
+import dev.emi.trinkets.api.TrinketItem;
+import dev.emi.trinkets.api.TrinketsApi;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -11,7 +14,9 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -28,6 +33,23 @@ public class UnattunedRingItem extends Item implements Trinket {
 	}
 
 	@Override
+	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+		ItemStack stack = player.getItemInHand(hand);
+		if (TrinketItem.equipItem(player, stack)) {
+			return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+		}
+		return super.use(level, player, hand);
+	}
+
+	@Override
+	public void tick(ItemStack stack, SlotReference slot, LivingEntity entity) {
+		if (entity.level().isClientSide() || !(entity instanceof Player player)) {
+			return;
+		}
+		processAttunement(stack, player, (ServerLevel) entity.level(), slot, null);
+	}
+
+	@Override
 	public void inventoryTick(ItemStack stack, Level level, Entity entity, int slotId, boolean isSelected) {
 		if (level.isClientSide() || !(entity instanceof Player player)) {
 			return;
@@ -36,18 +58,37 @@ public class UnattunedRingItem extends Item implements Trinket {
 		boolean isHeldMain = player.getMainHandItem() == stack;
 		boolean isHeldOff = player.getOffhandItem() == stack;
 		if (!isHeldMain && !isHeldOff) {
-			// Slowly cool down if stored in inventory
-			int heat = stack.getOrDefault(ModDataComponents.HEAT_PROGRESS, 0);
-			if (heat > 0) {
-				stack.set(ModDataComponents.HEAT_PROGRESS, heat - 1);
+			// If equipped in Trinkets, Trinket.tick handles it!
+			// If stored loose in normal inventory, slowly cool down
+			if (!isEquippedInTrinkets(player, stack)) {
+				int heat = stack.getOrDefault(ModDataComponents.HEAT_PROGRESS, 0);
+				if (heat > 0) {
+					stack.set(ModDataComponents.HEAT_PROGRESS, heat - 1);
+				}
 			}
 			return;
 		}
 
-		ServerLevel serverLevel = (ServerLevel) level;
+		InteractionHand hand = isHeldMain ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+		processAttunement(stack, player, (ServerLevel) level, null, hand);
+	}
+
+	private boolean isEquippedInTrinkets(Player player, ItemStack stack) {
+		var comp = TrinketsApi.getTrinketComponent(player);
+		if (comp.isPresent()) {
+			for (var tuple : comp.get().getAllEquipped()) {
+				if (tuple.getB() == stack) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private void processAttunement(ItemStack stack, Player player, ServerLevel serverLevel, SlotReference slot, InteractionHand hand) {
 		boolean inLava = player.isInLava();
-		boolean inFire = level.getBlockState(player.blockPosition()).is(BlockTags.FIRE)
-			|| level.getBlockState(player.blockPosition().below()).is(BlockTags.FIRE);
+		boolean inFire = serverLevel.getBlockState(player.blockPosition()).is(BlockTags.FIRE)
+			|| serverLevel.getBlockState(player.blockPosition().below()).is(BlockTags.FIRE);
 
 		int heat = stack.getOrDefault(ModDataComponents.HEAT_PROGRESS, 0);
 
@@ -66,7 +107,7 @@ public class UnattunedRingItem extends Item implements Trinket {
 			}
 			if (player.tickCount % 16 == 0) {
 				float pitch = 0.8f + ((float) heat / TARGET_HEAT) * 0.8f;
-				level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.4f, pitch);
+				serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.4f, pitch);
 			}
 		}
 
@@ -75,8 +116,8 @@ public class UnattunedRingItem extends Item implements Trinket {
 			serverLevel.sendParticles(ParticleTypes.LAVA, player.getX(), player.getY() + 0.8, player.getZ(), 25, 0.4, 0.4, 0.4, 0.1);
 			serverLevel.sendParticles(ParticleTypes.FLAME, player.getX(), player.getY() + 0.8, player.getZ(), 35, 0.5, 0.5, 0.5, 0.08);
 
-			level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ANVIL_USE, SoundSource.PLAYERS, 1.0f, 0.9f);
-			level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 1.0f, 0.7f);
+			serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ANVIL_USE, SoundSource.PLAYERS, 1.0f, 0.9f);
+			serverLevel.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 1.0f, 0.7f);
 
 			player.displayClientMessage(Component.translatable("message.attunedrings.attuned_molten"), true);
 
@@ -86,10 +127,10 @@ public class UnattunedRingItem extends Item implements Trinket {
 			moltenStack.setDamageValue(RingData.MAX_ENERGY);
 			player.getCooldowns().addCooldown(ModItems.MOLTEN_RING, 1200);
 
-			if (isHeldMain) {
-				player.setItemInHand(InteractionHand.MAIN_HAND, moltenStack);
-			} else {
-				player.setItemInHand(InteractionHand.OFF_HAND, moltenStack);
+			if (slot != null) {
+				slot.inventory().setItem(slot.index(), moltenStack);
+			} else if (hand != null) {
+				player.setItemInHand(hand, moltenStack);
 			}
 			return;
 		}

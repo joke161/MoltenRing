@@ -7,11 +7,13 @@ import com.joke.attunedrings.registry.ModAttachments;
 import com.joke.attunedrings.registry.ModDataComponents;
 import com.joke.attunedrings.registry.ModItems;
 import dev.emi.trinkets.api.TrinketsApi;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -30,8 +32,39 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SpellHandler {
+	private static final Map<UUID, Integer> ACTIVE_FLAME_CONES = new ConcurrentHashMap<>();
+
+	public static void init() {
+		ServerTickEvents.END_SERVER_TICK.register(SpellHandler::tickActiveChannels);
+	}
+
+	private static void tickActiveChannels(MinecraftServer server) {
+		if (ACTIVE_FLAME_CONES.isEmpty()) {
+			return;
+		}
+
+		Iterator<Map.Entry<UUID, Integer>> it = ACTIVE_FLAME_CONES.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry<UUID, Integer> entry = it.next();
+			ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
+			if (player == null || !player.isAlive()) {
+				it.remove();
+				continue;
+			}
+
+			int remaining = entry.getValue() - 1;
+			if (remaining <= 0) {
+				it.remove();
+				continue;
+			}
+			entry.setValue(remaining);
+
+			streamFlameConeTick(player, player.serverLevel(), remaining);
+		}
+	}
 
 	public static void handleCast(ServerPlayer player, List<ElementType> queue) {
 		Optional<SpellType> optionalSpell = SpellType.fromQueue(queue);
@@ -195,39 +228,52 @@ public class SpellHandler {
 	}
 
 	private static void executeFlameCone(ServerPlayer player, ServerLevel level) {
+		level.playSound(null, player.getX(), player.getY(), player.getZ(),
+			SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 1.0f, 0.8f);
+		level.playSound(null, player.getX(), player.getY(), player.getZ(),
+			SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.9f, 1.2f);
+
+		ACTIVE_FLAME_CONES.put(player.getUUID(), 50); // 2.5s continuous dragon breath stream
+		streamFlameConeTick(player, level, 50);
+	}
+
+	private static void streamFlameConeTick(ServerPlayer player, ServerLevel level, int remainingTicks) {
 		Vec3 eyePos = player.getEyePosition();
 		Vec3 look = player.getLookAngle().normalize();
 		double range = 6.5;
 
-		level.playSound(null, player.getX(), player.getY(), player.getZ(),
-			SoundEvents.FIRECHARGE_USE, SoundSource.PLAYERS, 1.0f, 0.8f);
-		level.playSound(null, player.getX(), player.getY(), player.getZ(),
-			SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.8f, 1.4f);
+		if (remainingTicks % 5 == 0) {
+			level.playSound(null, player.getX(), player.getY(), player.getZ(),
+				SoundEvents.FIRE_AMBIENT, SoundSource.PLAYERS, 0.6f, 1.2f);
+		}
 
-		// Dense particle spray across cone
+		// Dense streaming particles along current gaze direction
 		Random rnd = new Random();
-		for (int i = 0; i < 45; i++) {
-			double dist = 1.0 + rnd.nextDouble() * (range - 1.0);
-			double spread = 0.35 * dist;
+		for (int i = 0; i < 7; i++) {
+			double dist = 0.8 + rnd.nextDouble() * (range - 0.8);
+			double spread = 0.28 * dist;
 			Vec3 dir = look.add((rnd.nextDouble() - 0.5) * spread, (rnd.nextDouble() - 0.5) * spread, (rnd.nextDouble() - 0.5) * spread).normalize();
 			Vec3 p = eyePos.add(dir.scale(dist));
-			level.sendParticles(ParticleTypes.FLAME, p.x, p.y, p.z, 1, dir.x * 0.15, dir.y * 0.15, dir.z * 0.15, 0.05);
+			level.sendParticles(ParticleTypes.FLAME, p.x, p.y, p.z, 1, dir.x * 0.15, dir.y * 0.15, dir.z * 0.15, 0.04);
 			if (i % 3 == 0) {
-				level.sendParticles(ParticleTypes.LAVA, p.x, p.y, p.z, 1, 0, 0, 0, 0);
+				level.sendParticles(ParticleTypes.SMOKE, p.x, p.y, p.z, 1, dir.x * 0.05, 0.02, dir.z * 0.05, 0.01);
 			}
 		}
 
-		AABB coneBox = player.getBoundingBox().inflate(range);
-		for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, coneBox, target -> target != player && target.isAlive())) {
-			Vec3 toEntity = e.position().add(0, e.getBbHeight() / 2.0, 0).subtract(eyePos);
-			double dist = toEntity.length();
-			if (dist <= range) {
-				double dot = toEntity.normalize().dot(look);
-				if (dot >= 0.70) { // ~45 degree half-angle cone
-					e.hurt(level.damageSources().playerAttack(player), 7.0f);
-					e.igniteForSeconds(6.0f);
-					Vec3 knockDir = toEntity.normalize().scale(0.8);
-					e.push(knockDir.x, 0.3, knockDir.z);
+		// Apply continuous damage, fire and knockback every 4 ticks
+		if (remainingTicks % 4 == 0) {
+			AABB coneBox = player.getBoundingBox().inflate(range);
+			for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, coneBox, target -> target != player && target.isAlive())) {
+				Vec3 toEntity = e.position().add(0, e.getBbHeight() / 2.0, 0).subtract(eyePos);
+				double dist = toEntity.length();
+				if (dist <= range) {
+					double dot = toEntity.normalize().dot(look);
+					if (dot >= 0.70) { // ~45 degree cone
+						e.hurt(level.damageSources().playerAttack(player), 2.2f);
+						e.igniteForSeconds(4.0f);
+						Vec3 knockDir = toEntity.normalize().scale(0.35);
+						e.push(knockDir.x, 0.1, knockDir.z);
+					}
 				}
 			}
 		}
