@@ -1,87 +1,102 @@
 # Attuned Rings
 
-A modular **Minecraft 1.21.1** magic mod built on the **Fabric Loader** with first-class **Trinkets** integration, introducing elemental attuned rings starting with the legendary **Molten Ring** (`attunedrings:molten_ring`) featuring passive emergency fire protection, dynamic wear progression, and an active lava-walking ability.
+A modular **Minecraft 1.21.1** magic mod built on the **Fabric Loader** with first-class **Trinkets** integration, introducing elemental attuned rings starting with the legendary **Molten Ring** (`attunedrings:molten_ring`), Magicka-style elemental spellcasting, custom HUD, dynamic wear progression, and fire/lava attunement rituals.
 
 ---
 
 ## 📋 Features
 
-### 1. Item: Molten Ring (`attunedrings:molten_ring`)
+### 1. Unattuned Ring & Attunement Ritual
+- **Item: Unattuned Ring (`attunedrings:unattuned_ring`)**:
+  - Crafted with **8 Iron Ingots** surrounding an empty center in a Crafting Table.
+  - An empty metallic vessel awaiting elemental attunement.
+- **Attunement Ritual**:
+  - Equip the ring in a Trinkets ring slot or hold it in hand.
+  - Stand in **Fire for 10 seconds** or in **Lava for 5 seconds** (accumulating 200 ticks of heat progress).
+  - Emits fiery particles, smoke, and sizzles as the heat rises.
+  - Upon completion, an anvil strike and firecharge burst forge it into the **Molten Ring**.
+  - Starts in a cracked, cooling burnout state (Stage 6) with a 60-second cooldown to prevent immediate invulnerability exploits.
+
+---
+
+### 2. Item: Molten Ring (`attunedrings:molten_ring`)
 - **Stack Size**: Non-stackable (max 1 per slot).
-- **Trinkets Integration**: Equippable directly into the **Trinkets Ring Slot** (`hand:ring` / `ring`).
-- **Creative Tabs**: Dedicated `Attuned Rings` tab (`itemGroup.attunedrings`), integrated into vanilla `Tools & Utilities` and `Combat` tabs.
-- **Acquisition & Crafting**:
-  - **Crafting Table**: 4 Magma Cream, 2 Quartz, 2 Blaze Powder, 1 Gold Ingot.
-  - **Dungeon Generation**: 15% chance to spawn inside Nether Fortress bridge chests (`chests/nether_bridge`).
-- **Dynamic Model & Wear Progression (6 States)**:
-  - **100% Energy**: Pristine gold ring with no cracks (`molten_ring.png`).
-  - **Stages 1–4**: Micro-cooling transitions appear progressively (25%, 50%, 75% usage) as energy depletes, keeping the ring intact.
-  - **Stage 6 (Broken)**: Heavily fractured mesh with missing fragments (`molten_ring_6.png`), displaying exclusively upon complete depletion (0% energy) and throughout the 3-minute penalty cooldown.
-- **Custom Energy Bar**: Colored durability meter transitioning from green to yellow, and red during penalty lockouts.
-- **First-Person Immersion**: Custom `ItemInHandRenderer` mixin prevents hand-re-equip bobbing when energy states mutate in real time.
+- **Trinkets Integration**: Equippable directly into Trinkets ring slots (`hand/ring` and `offhand/ring`) or via Right-Click (`canEquipFromUse`).
+- **Creative Tabs**: Dedicated `Attuned Rings` tab (`itemGroup.attunedrings`), also found in vanilla `Tools & Utilities` and `Combat`.
+- **Dynamic 6-Stage Visual Wear**:
+  - **100% Energy**: Pristine gold ring with glowing magma core (`molten_ring.png`).
+  - **Stages 1–4**: Molten veins cool and darken progressively as energy depletes.
+  - **Stage 6 (Broken / Burnout)**: Heavily fractured stone mesh (`molten_ring_6.png`), displaying during 0% energy and burnout cooldowns.
+- **Clean UI**: Durability bar is hidden (`isBarVisible = false`) because wear is directly conveyed by the 6-stage texture model and HUD percentage.
 
 ---
 
-### 2. Trinkets Accessory Support
-- **Equip Slot**: Seamlessly slots into the Trinkets accessory menu (`Ring` slot).
-- **Hands-Free Magic**: All abilities (both passive emergency protection and active Lava Walker) function continuously while worn in a Trinkets slot, freeing up both main hand and off-hand for weapons, tools, or magical catalysts.
-- **Full Keybind Support**: The toggle keybind (`R`) automatically detects worn Trinket rings first before falling back to player inventory.
-- **Unified Cooldowns**: Cooldowns and anti-exploit locks synchronize between Trinket slots and the player's inventory.
+### 3. Passive Protection (Emergency Fire & Lava Shield)
+- **Grace Window (5 Seconds)**: Automatically activates when stepping into fire or lava, granting instant Fire Resistance.
+- **Safe Extinguishing**: Exiting fire/lava extinguishes the player safely and triggers a **10-second cooldown** (displayed as a cooldown sweep on the item).
+- **Hazard Timeout**: Staying in lava longer than 5 seconds revokes protection and triggers the 10-second cooldown.
 
 ---
 
-### 3. Passive Ability (Emergency Lava & Fire Shield)
-- **Trigger**: Activates automatically when entering lava, fire, or catching fire while equipped in a Trinkets slot, held in hands, or carried in inventory.
-- **Grace Window (5 Seconds)**: Grants immediate *Fire Resistance* for 5 seconds to navigate out of hazard zones.
-- **Rapid Safe Extinguishing**:
-  - Upon exiting lava/fire, remaining burn time drops to ~2.5 seconds (down from vanilla's 15 seconds).
-  - Fire Resistance persists throughout this extinguishing window, preventing residual damage.
-  - Successfully extinguishing triggers a **30-second cooldown**.
-- **Re-entry Penalty**: Re-entering fire or lava during the extinguishing window immediately revokes protection and triggers the **30-second cooldown**.
-- **Hazard Timeout**: Failing to escape lava within 5 seconds revokes protection and initiates the **30-second cooldown**.
-- **Broken State Lock**: Passive protection is disabled while the ring is in its 3-minute penalty recovery state.
+### 4. Elemental Spellcasting (Magicka-Style)
+Queue elemental runes and unleash powerful spells:
+- **`[Z]`**: Queue an elemental flame rune `[🔥]` (up to 5 runes, with escalating audio pitch).
+- **`[R]`**: Cast the queued spell.
+- **`[Shift + R]`**: Clear the rune queue.
+
+#### Spells:
+1. `[🔥]` **Firebolt (Огненный импульс)** — 10% Energy:
+   - Instant 28-block raycast fiery projectile.
+   - Deals 5 damage and ignites targets for 4s.
+   - Remote flint & steel: lights blocks and ignites Nether portals.
+2. `[🔥][🔥]` **Dragon's Breath (Дыхание дракона)** — 25% Energy:
+   - 2.5-second (50 ticks) continuous flamethrower cone.
+   - Dynamically sweeps with the player's camera gaze, burning and knocking back all enemies in the cone.
+3. `[🔥][🔥][🔥]` **Lava Strider (Поступь Магмы)** — 45% Energy:
+   - Grants Speed II and Fire Resistance for 15 seconds.
+   - Solidifies lava beneath the player into Temporary Magma blocks.
+   - Leaves a flaming trail behind the player.
+4. `[🔥][🔥][🔥][🔥]` **Flame Bastion (Бастион Пламени)** — 70% Energy:
+   - Expands a 5-block fiery shockwave knocking back all enemies.
+   - Grants Absorption (extra hearts) and Fire Resistance for 12 seconds.
+5. `[🔥][🔥][🔥][🔥][🔥]` **Supernova (Сверхновая)** — 100% Energy:
+   - Devastating magma explosion in an 8-block radius (20 damage / 10 hearts, launches enemies into the air, inflicts Weakness and Slowness).
+   - Shatters the ring to Stage 6 and triggers a 60-second Burnout cooldown.
 
 ---
 
-### 4. Active Ability (Lava Walker)
-- **Controls**:
-  - **Right-Click** with the ring in hand.
-  - **Keybind** (`R` by default, configurable in controls: `key.attunedrings.toggle`).
-- **Energy Pool**: 60 seconds of continuous operation (1200 ticks).
-- **Lava Solidification**: Converts lava source blocks within a 3-block radius into **Temporary Magma** (`attunedrings:temporary_magma`).
-- **Player-Centric Platform Stabilization**: While standing on the generated platform, magma directly underneath and surrounding the player does not melt, crack, or regenerate.
-- **Trail Melting**: Blocks outside the stabilization perimeter melt back into lava after 3–5 seconds.
-- **Proportional Energy Regeneration**:
-  - Energy regenerates at a rate of **+1 charge unit per 3 world ticks**.
-  - Complete recovery from 0 to 1200 units takes **3 minutes** (3600 ticks), while partial consumption recovers proportionally faster (e.g., 20s of use recharges in just 60s).
-- **Complete Depletion & Overheat**:
-  - Draining the full 60-second pool (0% energy) triggers an item break sound (`ITEM_BREAK`), strips Fire Resistance, switches to the broken model (Stage 6), and initiates a **3-minute penalty lockout**.
+### 5. Spell Discovery System
+- Spells display as `??? (Unknown)` with their energy cost until cast at least once.
+- Upon first cast, plays a level-up chime, displays a chat unlock notification, and permanently saves the discovered spell in player attachments.
 
 ---
 
-### 5. Anti-Exploit System & Cooldown Synchronization
-- **Proportional Cooldown Enforcement**:
-  - Toggling Lava Walker off (via Right-Click or keybind `R`) applies an engine-level cooldown equal to the exact recharge time of consumed energy:
-    $$\text{cooldownTicks} = \max(100, (1200 - \text{energy}) \times 3)$$
-  - Features a minimum threshold of **5 seconds** (100 ticks) to protect against accidental misclicks and button spamming.
-  - **Anti-Cycle Exploit**: Cooldown applies across all rings (both in inventory and Trinket slots) via vanilla `ItemCooldowns`. Swapping between multiple rings provides zero advantage.
-- **Active State Mutual Exclusion**: Pressing Right-Click or `R` while Lava Walker is already active safely deactivates the mode (`toggle off`) instead of stacking durations across multiple rings.
-- **Overheat Safety Lock**: While cooldown is active (`isOnCooldown == true`), passive emergency triggers are completely disabled.
-- **Relog & Respawn Persistence**: Cooldown and wear states serialize to persistent components, restoring active cooldown timers upon re-entering worlds.
+### 6. HUD & Visuals
+- **Compact Bottom-Left Frame** (`x = 6`, `y = screenHeight - 50`):
+  - Completely avoids health, hunger, armor, experience bar, and item popups.
+  - **Unified Frame**: Ring icon, spell title/energy cost, 5 rune sockets, and keybind hints are all enclosed within a single dark frame.
+  - **Dynamic Latin Keybinds**: Extracts raw key names (`[Z]`, `[R]`, `[Shift+R]`) from `KeyBindingHelper`, independent of the player's operating system keyboard layout.
+  - **Pulsing Overheat Border**: The frame glows with an animated fiery pulse when 4–5 stacks are queued.
+  - **Hand Particle Aura**: Shows a first-person particle aura on the player's right hand/shoulder, keeping the crosshair unobstructed.
 
 ---
 
-### 6. Block: Temporary Magma (`attunedrings:temporary_magma`)
-- Stepping on temporary magma deals no damage to the player.
-- Features 4 age states (`age: 0..3`) before reverting to lava.
-- Maintained persistently by nearby active ring holders.
+### 7. Trinkets Integration
+- Full Minecraft 1.21.1 tag support (`data/trinkets/tags/item/ring.json`, `hand/ring.json`, `offhand/ring.json`, `c/tags/item/rings.json`).
+- Entity slot registration (`data/trinkets/entities/attunedrings.json`) automatically opens `hand/ring` and `offhand/ring` slots for players.
+- Equip sound: `ARMOR_EQUIP_GOLD`.
 
 ---
 
-### 7. Localization & UI
-- Fully localized in **English** (`en_us.json`) and **Russian** (`ru_ru.json`).
-- Dynamic tooltips displaying charge percentage and current state (*Active*, *Ready*, *Shielding*, *Cooling Down*, *Recharging*, *Broken*).
-- Audio feedback paired with Actionbar status updates.
+### 8. Block: Temporary Magma (`attunedrings:temporary_magma`)
+- Safely walkable with no fire damage.
+- Cycles through 4 age states before melting back into lava.
+- Maintained persistently while active ring wearers stand nearby.
+
+---
+
+### 9. Localization
+- 100% dual-language support: **English** (`en_us.json`) and **Russian** (`ru_ru.json`).
 
 ---
 
