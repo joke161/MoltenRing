@@ -1,0 +1,6 @@
+{
+  "parent": "attunedrings:item/ring_base",
+  "textures": {
+    "layer0": "attunedrings:item/unattuned_ring"
+  }
+}

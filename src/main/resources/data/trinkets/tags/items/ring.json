@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "attunedrings:molten_ring"
+    "attunedrings:molten_ring",
+    "attunedrings:unattuned_ring"
   ]
 }

@@ -17,7 +17,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -105,9 +104,7 @@ public class MoltenRingItem extends Item implements Trinket {
 				changed = true;
 			}
 		} else if (passiveGraceTicks <= 0) {
-			// Ready to trigger only if not in active lava walker, not on cooldown, not broken, and player is in danger or on fire
-			if (!isLavaWalkerActive(player) && (inDanger || player.isOnFire())) {
-				// Only let one ring handle passive grace if multiple rings exist
+			if (inDanger || player.isOnFire()) {
 				if (!isAnyOtherRingInGrace(player, stack)) {
 					passiveGraceTicks = RingData.PASSIVE_GRACE_DURATION; // 5 seconds (100 ticks)
 					exitedDanger = false;
@@ -118,12 +115,12 @@ public class MoltenRingItem extends Item implements Trinket {
 				}
 			}
 		} else {
-			// Currently in grace period: maintain fire resistance
+			// In grace period: maintain fire resistance
 			player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 40, 0, false, false, true));
 
 			if (inDanger) {
 				if (exitedDanger) {
-					// Player exited danger earlier and re-entered fire/lava: cancel & apply 30-sec cooldown
+					// Player re-entered danger: trigger 10-second cooldown
 					passiveGraceTicks = 0;
 					exitedDanger = false;
 					passiveCd = RingData.MAX_PASSIVE_CD;
@@ -133,12 +130,10 @@ public class MoltenRingItem extends Item implements Trinket {
 					level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.LAVA_EXTINGUISH, SoundSource.PLAYERS, 0.8f, 0.7f);
 					changed = true;
 				} else {
-					// Player is in initial danger: count down the 5 seconds
 					passiveGraceTicks--;
 					changed = true;
 
 					if (passiveGraceTicks <= 0) {
-						// 5 seconds expired while still inside lava/fire!
 						passiveGraceTicks = 0;
 						passiveCd = RingData.MAX_PASSIVE_CD;
 						player.getCooldowns().addCooldown(this, RingData.MAX_PASSIVE_CD);
@@ -148,19 +143,16 @@ public class MoltenRingItem extends Item implements Trinket {
 					}
 				}
 			} else {
-				// Player is OUTSIDE lava/fire blocks
 				if (!exitedDanger) {
 					exitedDanger = true;
 					changed = true;
 				}
 
-				// Accelerate extinguishing: reduce fire to ~2.5 seconds (50 ticks)
-				if (player.getRemainingFireTicks() > 50) {
-					player.setRemainingFireTicks(50);
+				if (player.getRemainingFireTicks() > 40) {
+					player.setRemainingFireTicks(40);
 				}
 
 				if (!player.isOnFire()) {
-					// Player has completely extinguished without taking damage
 					passiveGraceTicks = 0;
 					exitedDanger = false;
 					passiveCd = RingData.MAX_PASSIVE_CD;
@@ -172,59 +164,46 @@ public class MoltenRingItem extends Item implements Trinket {
 			}
 		}
 
-		// 3. Penalty cooldown logic (when active energy was completely depleted)
+		// 3. Penalty cooldown logic (Burnout / Supernova / Attunement)
 		if (penaltyCd > 0) {
 			penaltyCd--;
-			energy = (RingData.PENALTY_COOLDOWN - penaltyCd) / 3;
+			energy = RingData.MAX_ENERGY - penaltyCd;
 			if (active) {
 				active = false;
 			}
 			changed = true;
 		}
 
-		// 4. Active mode logic (Lava Walker)
+		// 4. Active mode logic (Lava Strider - Spell 3)
 		if (active) {
+			if (idleTicks > 0) {
+				idleTicks--;
+				changed = true;
+				if (idleTicks <= 0) {
+					active = false;
+					changed = true;
+				}
+			}
 			if (onVanillaCd) {
 				active = false;
 				changed = true;
-			} else if (!isPrimaryActiveRing(player, stack)) {
-				// Prevent multiple active rings simultaneously
-				active = false;
-				changed = true;
 			} else {
-				idleTicks = 0;
-				if (energy > 0) {
-					energy--;
-					changed = true;
+				freezeLava(level, player);
 
-					// Freeze lava within 3-block radius under player
-					freezeLava(level, player);
+				if (player.isOnFire()) {
+					player.clearFire();
+				}
+				player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 40, 0, false, false, false));
 
-					// Protect player from fire while lava walker is active
-					if (player.isOnFire()) {
-						player.clearFire();
-					}
-					player.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 40, 0, false, false, false));
-
-					if (energy <= 0) {
-						energy = 0;
-						active = false;
-						penaltyCd = RingData.PENALTY_COOLDOWN; // 3600 ticks
-						player.getCooldowns().addCooldown(this, RingData.PENALTY_COOLDOWN);
-						player.removeEffect(MobEffects.FIRE_RESISTANCE);
-						player.displayClientMessage(Component.translatable("message.attunedrings.empty"), true);
-						level.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.ITEM_BREAK, SoundSource.PLAYERS, 1.0f, 0.8f);
-						deactivateAllRings(player, false);
-					}
+				if (player.tickCount % 2 == 0) {
+					level.sendParticles(ParticleTypes.FLAME, player.getX(), player.getY() + 0.1, player.getZ(), 2, 0.1, 0.05, 0.1, 0.01);
 				}
 			}
 		} else if (penaltyCd <= 0) {
-			// Proportional energy regeneration: +1 charge every 3 world ticks
+			// Energy regeneration: +1 charge per tick when not at max
 			if (energy < RingData.MAX_ENERGY) {
-				if (level.getGameTime() % 3 == 0) {
-					energy++;
-					changed = true;
-				}
+				energy++;
+				changed = true;
 			}
 		}
 
@@ -236,141 +215,6 @@ public class MoltenRingItem extends Item implements Trinket {
 		if (stack.getDamageValue() != targetDamage) {
 			stack.setDamageValue(targetDamage);
 		}
-	}
-
-	public static List<ItemStack> getAllRings(Player player) {
-		List<ItemStack> rings = new ArrayList<>();
-
-		// 1. Check Trinket slots
-		TrinketsApi.getTrinketComponent(player).ifPresent(component -> {
-			component.forEach((slotRef, stack) -> {
-				if (stack.is(ModItems.MOLTEN_RING)) {
-					rings.add(stack);
-				}
-			});
-		});
-
-		// 2. Check Player inventory
-		int size = player.getInventory().getContainerSize();
-		for (int i = 0; i < size; i++) {
-			ItemStack stack = player.getInventory().getItem(i);
-			if (stack.is(ModItems.MOLTEN_RING)) {
-				rings.add(stack);
-			}
-		}
-		return rings;
-	}
-
-	public static void toggleRingFromKeybind(Player player) {
-		List<ItemStack> rings = getAllRings(player);
-		if (!rings.isEmpty()) {
-			toggleRing(player, rings.get(0));
-		}
-	}
-
-	public static boolean isPrimaryActiveRing(Player player, ItemStack currentStack) {
-		for (ItemStack stack : getAllRings(player)) {
-			RingData data = stack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
-			if (data.active()) {
-				return stack == currentStack;
-			}
-		}
-		return true;
-	}
-
-	public static boolean isAnyOtherRingInGrace(Player player, ItemStack currentStack) {
-		for (ItemStack stack : getAllRings(player)) {
-			if (stack != currentStack) {
-				RingData data = stack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
-				if (data.passiveGraceTicks() > 0) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
-	public static boolean isLavaWalkerActive(Player player) {
-		if (player.getCooldowns().isOnCooldown(ModItems.MOLTEN_RING)) {
-			return false;
-		}
-		for (ItemStack stack : getAllRings(player)) {
-			RingData data = stack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
-			if (data.active() && data.energy() > 0 && data.penaltyCooldown() <= 0) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	public static boolean hasActiveRing(Player player) {
-		return isLavaWalkerActive(player);
-	}
-
-	public static void deactivateAllRings(Player player, boolean sendFeedback) {
-		List<ItemStack> rings = getAllRings(player);
-		int activeEnergy = RingData.MAX_ENERGY;
-
-		// Determine active ring's energy to calculate required recharge cooldown
-		for (ItemStack stack : rings) {
-			RingData data = stack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
-			if (data.active()) {
-				activeEnergy = Math.min(activeEnergy, data.energy());
-			}
-		}
-
-		int cdTicks = sendFeedback ? RingData.calculateCooldownTicks(activeEnergy) : 0;
-
-		for (ItemStack stack : rings) {
-			RingData data = stack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
-			boolean wasActive = data.active();
-			int newPassiveCd = sendFeedback
-				? Math.max(data.passiveCooldown(), cdTicks)
-				: data.passiveCooldown();
-
-			if (wasActive || (sendFeedback && data.passiveCooldown() < cdTicks)) {
-				stack.set(ModDataComponents.RING_DATA, new RingData(
-					false,
-					data.energy(),
-					newPassiveCd,
-					data.idleTicks(),
-					data.penaltyCooldown(),
-					data.passiveGraceTicks(),
-					data.exitedDanger()
-				));
-			}
-		}
-		player.removeEffect(MobEffects.FIRE_RESISTANCE);
-		if (sendFeedback && cdTicks > 0) {
-			player.getCooldowns().addCooldown(ModItems.MOLTEN_RING, cdTicks);
-			player.displayClientMessage(Component.translatable("message.attunedrings.deactivated"), true);
-			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.6f, 0.9f);
-		}
-	}
-
-	public static void activateRing(Player player, ItemStack stack) {
-		RingData data = stack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
-		if (data.energy() <= 0 || data.penaltyCooldown() > 0) {
-			player.displayClientMessage(Component.translatable("message.attunedrings.empty"), true);
-			player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5f, 1.5f);
-			return;
-		}
-
-		// Ensure all other rings are inactive before activating this one
-		deactivateAllRings(player, false);
-
-		stack.set(ModDataComponents.RING_DATA, new RingData(
-			true,
-			data.energy(),
-			data.passiveCooldown(),
-			0,
-			0,
-			data.passiveGraceTicks(),
-			data.exitedDanger()
-		));
-
-		player.displayClientMessage(Component.translatable("message.attunedrings.active"), true);
-		player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.BLAZE_SHOOT, SoundSource.PLAYERS, 0.6f, 1.2f);
 	}
 
 	public static boolean hasActiveRingNearby(ServerLevel level, BlockPos pos) {
@@ -389,33 +233,66 @@ public class MoltenRingItem extends Item implements Trinket {
 		return false;
 	}
 
-	private void freezeLava(ServerLevel level, Player player) {
-		BlockPos center = BlockPos.containing(player.getX(), player.getY() - 0.5, player.getZ());
+	public static boolean hasActiveRing(Player player) {
+		if (player.getCooldowns().isOnCooldown(ModItems.MOLTEN_RING)) {
+			return false;
+		}
+		for (ItemStack stack : getAllRings(player)) {
+			RingData data = stack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
+			if (data.active() && data.energy() > 0 && data.penaltyCooldown() <= 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static List<ItemStack> getAllRings(Player player) {
+		List<ItemStack> rings = new ArrayList<>();
+		TrinketsApi.getTrinketComponent(player).ifPresent(component -> {
+			component.forEach((slotRef, stack) -> {
+				if (stack.is(ModItems.MOLTEN_RING)) {
+					rings.add(stack);
+				}
+			});
+		});
+		if (player.getMainHandItem().is(ModItems.MOLTEN_RING)) rings.add(player.getMainHandItem());
+		if (player.getOffhandItem().is(ModItems.MOLTEN_RING)) rings.add(player.getOffhandItem());
+		return rings;
+	}
+
+	private static boolean isAnyOtherRingInGrace(Player player, ItemStack currentStack) {
+		for (ItemStack s : getAllRings(player)) {
+			if (s != currentStack) {
+				RingData d = s.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
+				if (d.passiveGraceTicks() > 0) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private static void freezeLava(ServerLevel level, Player player) {
+		BlockPos center = player.blockPosition().below();
 		int radius = 3;
-		BlockState magmaState = ModBlocks.TEMPORARY_MAGMA.defaultBlockState();
 
 		for (int dx = -radius; dx <= radius; dx++) {
 			for (int dz = -radius; dz <= radius; dz++) {
 				if (dx * dx + dz * dz <= radius * radius) {
 					BlockPos target = center.offset(dx, 0, dz);
-					BlockState current = level.getBlockState(target);
+					BlockState state = level.getBlockState(target);
 
-					if (current.is(ModBlocks.TEMPORARY_MAGMA)) {
-						if (current.getValue(TemporaryMagmaBlock.AGE) != 0) {
-							level.setBlock(target, current.setValue(TemporaryMagmaBlock.AGE, 0), Block.UPDATE_ALL);
-						}
-						continue;
-					}
-
-					if (current.is(Blocks.LAVA) && level.getFluidState(target).isSource()) {
+					if (state.is(Blocks.LAVA) && state.getFluidState().isSource()) {
 						BlockPos above = target.above();
-						BlockState aboveState = level.getBlockState(above);
-						if (aboveState.isAir() || aboveState.canBeReplaced()) {
-							level.setBlockAndUpdate(target, magmaState);
+						if (level.getBlockState(above).isAir() || level.getBlockState(above).canBeReplaced()) {
+							BlockState magma = ModBlocks.TEMPORARY_MAGMA.defaultBlockState()
+								.setValue(TemporaryMagmaBlock.AGE, 0);
+							level.setBlockAndUpdate(target, magma);
+							level.scheduleTick(target, ModBlocks.TEMPORARY_MAGMA, 40 + level.random.nextInt(20));
 
-							if (level.getRandom().nextFloat() < 0.2f) {
-								level.sendParticles(ParticleTypes.FLAME, target.getX() + 0.5, target.getY() + 1.02, target.getZ() + 0.5, 1, 0.2, 0.05, 0.2, 0.02);
-							}
+							level.sendParticles(ParticleTypes.LAVA,
+								target.getX() + 0.5, target.getY() + 1.05, target.getZ() + 0.5,
+								1, 0.2, 0.1, 0.2, 0.01);
 						}
 					}
 				}
@@ -425,65 +302,13 @@ public class MoltenRingItem extends Item implements Trinket {
 
 	@Override
 	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-		ItemStack stack = player.getItemInHand(hand);
-
-		if (player.getCooldowns().isOnCooldown(this)) {
-			if (!level.isClientSide()) {
-				showCooldownMessage(player, stack);
-			}
-			return InteractionResultHolder.fail(stack);
-		}
-
-		if (!level.isClientSide()) {
-			toggleRing(player, stack);
-		}
-		return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
-	}
-
-	public static void toggleRing(Player player, ItemStack stack) {
-		if (player.getCooldowns().isOnCooldown(ModItems.MOLTEN_RING)) {
-			showCooldownMessage(player, stack);
-			return;
-		}
-
-		if (isLavaWalkerActive(player)) {
-			deactivateAllRings(player, true);
-		} else {
-			activateRing(player, stack);
-		}
-	}
-
-	private static void showCooldownMessage(Player player, ItemStack stack) {
-		int secondsLeft = getRemainingCooldownSeconds(player, stack);
-		player.displayClientMessage(Component.translatable("message.attunedrings.cooldown", secondsLeft + "s"), true);
-		player.level().playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5f, 1.5f);
-	}
-
-	private static int getRemainingCooldownSeconds(Player player, ItemStack currentStack) {
-		RingData currentData = currentStack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
-		if (currentData.penaltyCooldown() > 0) {
-			return (currentData.penaltyCooldown() + 19) / 20;
-		}
-		if (currentData.passiveCooldown() > 0) {
-			return (currentData.passiveCooldown() + 19) / 20;
-		}
-		for (ItemStack s : getAllRings(player)) {
-			RingData d = s.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
-			if (d.penaltyCooldown() > 0) {
-				return (d.penaltyCooldown() + 19) / 20;
-			}
-			if (d.passiveCooldown() > 0) {
-				return (d.passiveCooldown() + 19) / 20;
-			}
-		}
-		float percent = player.getCooldowns().getCooldownPercent(currentStack.getItem(), 0.0f);
-		return Math.max(1, Math.round(percent * (RingData.PENALTY_COOLDOWN / 20f)));
+		return InteractionResultHolder.pass(player.getItemInHand(hand));
 	}
 
 	@Override
 	public boolean isBarVisible(ItemStack stack) {
 		RingData data = stack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
-		return data.active() || data.energy() < RingData.MAX_ENERGY || data.penaltyCooldown() > 0;
+		return data.penaltyCooldown() > 0 || data.energy() < RingData.MAX_ENERGY;
 	}
 
 	@Override
@@ -496,7 +321,7 @@ public class MoltenRingItem extends Item implements Trinket {
 	public int getBarColor(ItemStack stack) {
 		RingData data = stack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
 		if (data.penaltyCooldown() > 0) {
-			return 0xFF3333; // Red while in penalty cooldown
+			return 0xFF3333;
 		}
 		float fraction = (float) data.energy() / RingData.MAX_ENERGY;
 		return Mth.hsvToRgb(fraction / 3.0f, 1.0f, 1.0f);
@@ -512,13 +337,11 @@ public class MoltenRingItem extends Item implements Trinket {
 	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltipAdder, TooltipFlag flag) {
 		RingData data = stack.getOrDefault(ModDataComponents.RING_DATA, RingData.DEFAULT);
 
-		tooltipAdder.add(Component.translatable("tooltip.attunedrings.passive"));
-		tooltipAdder.add(Component.translatable("tooltip.attunedrings.active"));
+		tooltipAdder.add(Component.translatable("tooltip.attunedrings.passive_new"));
+		tooltipAdder.add(Component.translatable("tooltip.attunedrings.active_new"));
 
 		Component stateComp;
-		if (data.active()) {
-			stateComp = Component.translatable("tooltip.attunedrings.state_active");
-		} else if (data.penaltyCooldown() > 0) {
+		if (data.penaltyCooldown() > 0) {
 			stateComp = Component.translatable("tooltip.attunedrings.state_cooldown", (data.penaltyCooldown() + 19) / 20);
 		} else if (data.passiveGraceTicks() > 0) {
 			stateComp = Component.translatable("tooltip.attunedrings.state_grace", (data.passiveGraceTicks() + 19) / 20);
