@@ -121,11 +121,11 @@ public class SpellHudRenderer {
 			int heat = ringStack.getOrDefault(ModDataComponents.HEAT_PROGRESS, 0);
 			int pct = Math.min(100, (int) Math.round(((double) heat / 200.0) * 100.0));
 			if (heat > 0) {
-				guiGraphics.drawString(font, "§6Закалка: §e" + pct + "%", textX, textY, 0xFFFFFFFF, true);
+				guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_heating", pct).getString(), textX, textY, 0xFFFFFFFF, true);
 			} else {
 				guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_unattuned").getString(), textX, textY, 0xFFCCCCCC, true);
 			}
-			guiGraphics.drawString(font, "§8Огонь: 10с  §8|  §8Лава: 5с", textX, y + 19, 0xFFAAAAAA, true);
+			guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_heating_hint").getString(), textX, y + 19, 0xFFAAAAAA, true);
 			return;
 		}
 
@@ -140,20 +140,19 @@ public class SpellHudRenderer {
 
 				if (discovered) {
 					String name = Component.translatable(spell.getTranslationKey()).getString();
-					guiGraphics.drawString(font, "§6§l" + name + " §c-" + costPercent + "%", textX, textY, 0xFFFFFFFF, true);
+					guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_spell_cost", name, costPercent).getString(), textX, textY, 0xFFFFFFFF, true);
 				} else {
-					guiGraphics.drawString(font, "§e§k???§r §7(Неизвестно) §c-" + costPercent + "%", textX, textY, 0xFFFFFFFF, true);
+					guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_unknown_spell", costPercent).getString(), textX, textY, 0xFFFFFFFF, true);
 				}
 			} else {
-				guiGraphics.drawString(font, "§cНеизвестная комбинация", textX, textY, 0xFFFFAAAA, true);
+				guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_unknown_combo").getString(), textX, textY, 0xFFFFAAAA, true);
 			}
 		} else if (ringData != null) {
 			if (ringData.penaltyCooldown() > 0) {
 				int sec = (ringData.penaltyCooldown() + 19) / 20;
-				guiGraphics.drawString(font, "§c§lПЕРЕГРЕВ! §7Откат: " + sec + "с", textX, textY, 0xFFFF5555, true);
+				guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_overheat", sec).getString(), textX, textY, 0xFFFF5555, true);
 			} else {
-				String readyText = Component.translatable("gui.attunedrings.hud_ready").getString();
-				guiGraphics.drawString(font, "§6" + readyText + " §8| §e" + ringData.getEnergyPercent() + "%", textX, textY, 0xFFEEDD88, true);
+				guiGraphics.drawString(font, Component.translatable("gui.attunedrings.hud_ready_status", ringData.getEnergyPercent()).getString(), textX, textY, 0xFFEEDD88, true);
 			}
 		}
 
