@@ -60,5 +60,5 @@
   "gui.attunedrings.hud_unknown_combo": "§cНеизвестная комбинация",
   "gui.attunedrings.hud_overheat": "§c§lПЕРЕГРЕВ! §7Откат: %dс",
   "modmenu.nameTranslation.attunedrings": "Attuned Rings",
-  "modmenu.descriptionTranslation.attunedrings": "Мод Attuned Rings для Minecraft 1.21.1 с поддержкой Trinkets"
+  "modmenu.descriptionTranslation.attunedrings": "Мод Attuned Rings для Minecraft 1.21.1 (NeoForge) с поддержкой Curios API"
 }

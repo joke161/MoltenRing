@@ -60,5 +60,5 @@
   "gui.attunedrings.hud_unknown_combo": "§cUnknown combination",
   "gui.attunedrings.hud_overheat": "§c§lBURNOUT! §7Cooldown: %ds",
   "modmenu.nameTranslation.attunedrings": "Attuned Rings",
-  "modmenu.descriptionTranslation.attunedrings": "Attuned Rings mod for Minecraft 1.21.1 with Trinkets support"
+  "modmenu.descriptionTranslation.attunedrings": "Attuned Rings mod for Minecraft 1.21.1 (NeoForge) with Curios API support"
 }
