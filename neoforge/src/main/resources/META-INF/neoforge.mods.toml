@@ -1,0 +1,43 @@
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "MIT"
+
+[[mods]]
+modId = "${mod_id}"
+version = "${version}"
+displayName = "${mod_name}"
+logoFile = "assets/attunedrings/icon.png"
+authors = "joke"
+description = '''Attuned Rings mod for Minecraft 1.21.1 with Curios API support and optional Epic Fight integration.'''
+
+[[mixins]]
+config = "attunedrings.mixins.json"
+
+[[dependencies.${mod_id}]]
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1,1.22)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "curios"
+type = "required"
+versionRange = "[9.0.0,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${mod_id}]]
+modId = "epicfight"
+type = "optional"
+versionRange = "[21.0,)"
+ordering = "AFTER"
+side = "BOTH"
+

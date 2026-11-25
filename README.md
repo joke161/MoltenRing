@@ -1,6 +1,6 @@
 # Attuned Rings
 
-A modular **Minecraft 1.21.1** magic mod built on the **Fabric Loader** with first-class **Trinkets** integration, introducing elemental attuned rings starting with the legendary **Molten Ring** (`attunedrings:molten_ring`), Magicka-style elemental spellcasting, custom HUD, dynamic wear progression, and fire/lava attunement rituals.
+A modular **Minecraft 1.21.1** magic mod available for **Fabric** (with **Trinkets**) and **NeoForge** (with **Curios API** + optional **Epic Fight** compat), introducing elemental attuned rings starting with the legendary **Molten Ring** (`attunedrings:molten_ring`), Magicka-style elemental spellcasting, dynamic Overcharged Firebolt sniper aiming, 3D magma overlay visuals, and fire/lava attunement rituals.
 
 ---
 
@@ -95,7 +95,14 @@ Queue elemental runes and unleash powerful spells:
 
 ---
 
-### 9. Localization
+### 9. NeoForge Edition & New Gameplay/Visual Systems (`neoforge/`)
+- **Curios API Integration**: Equips into `ring` slots via NeoForge `Curios` data tags and capability attachments (`9.5.1+1.21.1`).
+- **Overcharged Firebolt Sniper (`[RMB]`) & Dynamic Crosshair**: With 1 Fire stack and no blocking item, hold `[RMB]` for `0.8s` (16 ticks) to fire a 42m pinpoint beam; quick-fire Firebolts accumulate dispersion bloom (`1.5°–11.5°`) visualized via an inverse-blended central dynamic crosshair (gold sniper lock reticle at full charge).
+- **Sustained Cast Choreography & 3D Magma Overlay**: Smooth procedural 1st- and 3rd-person spell animations, rapid-cast arm stance with recoil impulse, MainHand item suppression during active casts in 1st-person, and a 3D normal-extruded animated magma vein skin/armor overlay (with Iris `RenderBufferFlusher` compatibility).
+- **Shield Interaction**: Players can prime stacks (`[Z]`) behind a raised shield, while spell casting (`[R]` / sniper release) is blocked until the shield is lowered.
+- **Optional Epic Fight Soft-Dependency**: Reflection/bridge isolation (`0` hardcoded `yesman.epicfight` bytecode references in core mod classes) providing Battle Mode cast animations, physical `USE` key aiming support, and 1st/3rd-person `HumanoidMesh` magma overlays.
+
+### 10. Localization
 - 100% dual-language support: **English** (`en_us.json`) and **Russian** (`ru_ru.json`).
 
 ---
@@ -109,17 +116,20 @@ Queue elemental runes and unleash powerful spells:
 ## 🛠 Technical Specifications & Building
 
 * **Minecraft Version**: 1.21.1
-* **Fabric Loader**: >= 0.16.0
-* **Fabric API**: >= 0.116.17+1.21.1
-* **Trinkets**: >= 3.10.0
+* **Fabric**: Fabric Loader >= `0.16.0`, Fabric API >= `0.116.17+1.21.1`, Trinkets >= `3.10.0`
+* **NeoForge**: NeoForge >= `21.1` (`21.1.186`), Curios >= `9.0.0`, optional Epic Fight >= `21.0`
 * **Java Version**: 21+
 * **Mappings**: Official Mojang Mappings
 
 ### Build Commands
 ```bash
-# Build production JAR inside build/libs/
+# Build both Fabric and NeoForge production JARs
 ./gradlew build
+
+# Build NeoForge module only (neoforge/build/libs/)
+./gradlew :neoforge:build
 
 # Launch dev client for testing
 ./gradlew runClient
+./gradlew :neoforge:runClient
 ```

@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.joke.attunedrings.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "ItemInHandRendererMixin",
+    "PlayerModelMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

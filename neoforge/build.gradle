@@ -1,0 +1,84 @@
+plugins {
+	id 'java-library'
+	id 'maven-publish'
+	id 'net.neoforged.moddev' version '2.0.148'
+}
+
+version = project.version
+group = project.maven_group
+
+base {
+	archivesName = "${project.archives_base_name}-neoforge"
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+repositories {
+	mavenLocal()
+	maven {
+		name = "Curios"
+		url = uri("https://maven.theillusivec4.top/")
+	}
+	exclusiveContent {
+		forRepository {
+			maven {
+				name = "Modrinth"
+				url = uri("https://api.modrinth.com/maven")
+			}
+		}
+		filter {
+			includeGroup "maven.modrinth"
+		}
+	}
+}
+
+neoForge {
+	version = "21.1.186"
+
+	runs {
+		client {
+			client()
+		}
+		server {
+			server()
+			programArgument '--nogui'
+		}
+		configureEach {
+			systemProperty 'forge.logging.markers', 'REGISTRIES'
+			logLevel = org.slf4j.event.Level.DEBUG
+		}
+	}
+
+	mods {
+		"${project.mod_id}" {
+			sourceSet(sourceSets.main)
+		}
+	}
+}
+
+dependencies {
+	// Curios API for 1.21.1
+	compileOnly "top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.1:api"
+	runtimeOnly "top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.1"
+
+	// Epic Fight optional soft-dependency for 1.21.1
+	compileOnly "maven.modrinth:epic-fight:21.17.3.1-mc1.21.1-neoforge"
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+	options.release = 21
+}
+
+processResources {
+	def replaceProperties = [
+		minecraft_version: project.minecraft_version,
+		mod_id: project.mod_id,
+		mod_name: project.mod_name,
+		version: project.version
+	]
+	inputs.properties replaceProperties
+	filesMatching(['META-INF/neoforge.mods.toml']) {
+		expand replaceProperties
+	}
+}
